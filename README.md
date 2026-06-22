@@ -66,7 +66,7 @@ code --profile "hm-vue-ts" --install-extension dbaeumer.vscode-eslint
 
 `code` CLI를 찾지 못하면 실패로 종료하지 않고, 생성된 `.code-profile` 파일을 수동으로 import하는 방법을 안내합니다.
 
-VS Code가 새 Profile을 처음 생성하는 동안에는 확장 설치가 바로 준비되지 않을 수 있습니다. CLI는 새 창을 강제로 열어 Profile 생성을 유도하고, Profile이 준비될 때까지 잠깐 기다립니다. 그래도 준비되지 않으면 열린 VS Code 창이 완전히 로드된 뒤 다시 실행할 명령을 안내합니다.
+VS Code가 새 Profile을 처음 생성하는 동안에는 확장 설치가 바로 준비되지 않을 수 있습니다. CLI는 새 창을 강제로 열어 Profile 생성을 유도하고 잠깐 기다린 뒤, 선택된 확장 설치를 시도합니다. VS Code CLI가 개별 확장 설치를 거부하면 실패한 확장 수와 재시도 명령을 안내합니다.
 
 ## 명령 옵션
 

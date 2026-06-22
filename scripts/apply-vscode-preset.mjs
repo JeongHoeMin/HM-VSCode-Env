@@ -489,15 +489,7 @@ async function setupVsCodeProfile({
 
   await runCodeCommand(codeCommand, ['--new-window', '--profile', profileName, targetProjectDir]);
 
-  const profileReady = await waitForProfileAvailable(codeCommand, profileName);
-
-  if (!profileReady) {
-    return {
-      status: 'profile-not-ready',
-      installedExtensions: [],
-      failedExtensions: extensionIds
-    };
-  }
+  await waitForProfileAvailable(codeCommand, profileName);
 
   const installedExtensions = [];
   const failedExtensions = [];
@@ -534,13 +526,11 @@ async function waitForProfileAvailable(codeCommand, profileName) {
     });
 
     if (result.status === 0) {
-      return true;
+      return;
     }
 
     await delay(delayMs);
   }
-
-  return false;
 }
 
 async function delay(ms) {
@@ -657,14 +647,6 @@ function printSummary({
     }
 
     console.log(`Open this project with: code . --profile "${profileName}"`);
-    return;
-  }
-
-  if (setupResult.status === 'profile-not-ready') {
-    console.log('');
-    console.log(`VS Code Profile was opened but was not ready for extension installation yet: ${profileName}`);
-    console.log('Open the project once, then retry extension installation with:');
-    console.log(`  hm-vscode-env apply ${selection.presetName} "${targetProjectDir}" --setup-profile --install-extensions`);
     return;
   }
 
