@@ -1,5 +1,5 @@
 {
-  "name": "hm-vscode-env",
+  "name": "@hm/vscode-env",
   "version": "0.1.0",
   "private": true,
   "type": "module",
