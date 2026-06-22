@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const rootDir = process.cwd();
-const targetDirs = ['packs', 'presets', 'templates'];
+const targetDirs = ['packs', 'presets', 'profiles', 'templates'];
 const jsonFiles = [];
 
 for (const targetDir of targetDirs) {
@@ -38,7 +38,10 @@ async function collectJsonFiles(dir, files) {
       continue;
     }
 
-    if (entry.isFile() && entry.name.endsWith('.json')) {
+    if (
+      entry.isFile() &&
+      (entry.name.endsWith('.json') || entry.name.endsWith('.code-profile'))
+    ) {
       files.push(entryPath);
     }
   }
