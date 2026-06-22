@@ -44,11 +44,18 @@ const selection = options.layers
 
 const targetProjectDir = path.resolve(options.targetProjectDir ?? '.');
 const outputFiles = await buildWorkspaceFiles(selection.layers);
+const profileName = `hm-${selection.presetName}`;
 
 await writeWorkspaceFiles({
   targetProjectDir,
   outputFiles,
   mode: options.mode
+});
+
+const profilePath = await writeProfileFile({
+  targetProjectDir,
+  profileName,
+  outputFiles
 });
 
 console.log('');
@@ -58,6 +65,15 @@ console.log(`Output: ${path.join(targetProjectDir, '.vscode')}`);
 console.log('');
 console.log('This only writes project-level VS Code files.');
 console.log('The extensions.json file recommends extensions for this workspace; it does not install or uninstall user extensions.');
+console.log('');
+console.log('A VS Code Profile file was also generated for extensions, keybindings, theme, and UI preferences:');
+console.log(`  ${profilePath}`);
+console.log('');
+console.log('To use it:');
+console.log('  1. Open VS Code Command Palette');
+console.log('  2. Run "Profiles: Import Profile..."');
+console.log('  3. Select the generated .code-profile file');
+console.log(`  4. After importing, open this project with: code . --profile "${profileName}"`);
 
 function parseArgs(rawArgs) {
   const result = {
@@ -297,6 +313,38 @@ async function writeWorkspaceFiles({ targetProjectDir, outputFiles, mode }) {
   if (filesToWrite.launch) {
     await writeJson(path.join(vscodeDir, 'launch.json'), filesToWrite.launch);
   }
+}
+
+async function writeProfileFile({ targetProjectDir, profileName, outputFiles }) {
+  const profilesDir = path.join(targetProjectDir, 'profiles');
+  const profilePath = path.join(profilesDir, `${profileName}.code-profile`);
+  const profile = {
+    name: profileName,
+    settings: outputFiles.settings,
+    extensions: outputFiles.extensions.recommendations,
+    keybindings: [
+      {
+        key: 'ctrl+alt+l',
+        command: 'editor.action.formatDocument',
+        when: 'editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly'
+      },
+      {
+        key: 'shift+f6',
+        command: 'editor.action.rename',
+        when: 'editorHasRenameProvider && editorTextFocus && !editorReadonly'
+      },
+      {
+        key: 'ctrl+alt+o',
+        command: 'editor.action.organizeImports',
+        when: 'editorTextFocus && !editorReadonly'
+      }
+    ]
+  };
+
+  await mkdir(profilesDir, { recursive: true });
+  await writeJson(profilePath, profile);
+
+  return profilePath;
 }
 
 async function promptForWriteMode(vscodeDir) {
