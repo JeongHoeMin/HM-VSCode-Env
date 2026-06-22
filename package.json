@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "apply": "node scripts/apply-vscode-preset.mjs",
+    "resolve": "node scripts/resolve-preset.mjs",
     "validate:json": "node scripts/validate-json.mjs"
   }
 }
