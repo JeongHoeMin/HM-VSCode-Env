@@ -3,7 +3,7 @@
   "displayName": "HM VS Code Backend Pack",
   "description": "Backend common extensions.",
   "version": "0.0.1",
-  -> "publisher": "hoeminJ",
+  "publisher": "hoeminJ",
   "engines": {
     "vscode": "^1.90.0"
   },

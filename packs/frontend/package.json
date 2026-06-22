@@ -1,9 +1,9 @@
 {
-  "name": "hm-vscode-front-pack",
+  "name": "hm-vscode-frontend-pack",
   "displayName": "HM VS Code Frontend Pack",
   "description": "Frontend common extensions.",
   "version": "0.0.1",
-  -> "publisher": "hoeminJ",
+  "publisher": "hoeminJ",
   "engines": {
     "vscode": "^1.90.0"
   },

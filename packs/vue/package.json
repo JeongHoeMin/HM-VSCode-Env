@@ -3,7 +3,7 @@
   "displayName": "HM VS Code Vue Pack",
   "description": "Vue project extensions.",
   "version": "0.0.1",
-  -> "publisher": "hoeminJ",
+  "publisher": "hoeminJ",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -11,7 +11,7 @@
     "Extension Packs"
   ],
   "extensionPack": [
-    "hm.hm-vscode-front-pack",
+    "hm.hm-vscode-frontend-pack",
     "Vue.volar",
     "vitest.explorer"
   ]

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "apply": "node scripts/apply-vscode-preset.mjs"
+    "apply": "node scripts/apply-vscode-preset.mjs",
+    "validate:json": "node scripts/validate-json.mjs"
   }
 }

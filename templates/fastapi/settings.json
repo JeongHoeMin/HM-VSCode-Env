@@ -1,0 +1,6 @@
+{
+  "explorer.fileNesting.patterns": {
+    "main.py": "routers.py, dependencies.py, schemas.py",
+    "pyproject.toml": "poetry.lock, uv.lock, requirements.txt, requirements-*.txt"
+  }
+}
