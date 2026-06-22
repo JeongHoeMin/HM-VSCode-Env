@@ -487,7 +487,7 @@ async function setupVsCodeProfile({
     };
   }
 
-  await runCodeCommand(codeCommand, ['--profile', profileName, targetProjectDir]);
+  await runCodeCommand(codeCommand, ['--new-window', '--profile', profileName, targetProjectDir]);
 
   const profileReady = await waitForProfileAvailable(codeCommand, profileName);
 
