@@ -1,0 +1,11 @@
+{
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+
+  "explorer.fileNesting.patterns": {
+    "*.tsx": "$(capture).spec.tsx, $(capture).test.tsx, $(capture).stories.tsx, $(capture).module.css, $(capture).module.scss",
+    "*.jsx": "$(capture).spec.jsx, $(capture).test.jsx, $(capture).stories.jsx, $(capture).module.css, $(capture).module.scss"
+  }
+}

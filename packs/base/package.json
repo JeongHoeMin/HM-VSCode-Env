@@ -1,0 +1,21 @@
+{
+  "name": "hm-vscode-base-pack",
+  "displayName": "HM VS Code Base Pack",
+  "description": "Base VS Code extensions for all projects.",
+  "version": "0.0.1",
+  "publisher": "hoeminJ",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [
+    "PKief.material-icon-theme",
+    "EditorConfig.EditorConfig",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "mikestead.dotenv",
+    "spencerwmiles.vscode-task-buttons"
+  ]
+}

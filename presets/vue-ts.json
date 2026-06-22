@@ -1,0 +1,15 @@
+{
+  "name": "vue-ts",
+  "layers": [
+    "base",
+    "node",
+    "typescript",
+    "front",
+    "vue"
+  ],
+  "extensions": [
+    "hm.hm-vscode-typescript-pack",
+    "hm.hm-vscode-front-pack",
+    "hm.hm-vscode-vue-pack"
+  ]
+}

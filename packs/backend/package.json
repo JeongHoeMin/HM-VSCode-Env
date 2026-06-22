@@ -1,0 +1,17 @@
+{
+  "name": "hm-vscode-backend-pack",
+  "displayName": "HM VS Code Backend Pack",
+  "description": "Backend common extensions.",
+  "version": "0.0.1",
+  -> "publisher": "hoeminJ",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [
+    "humao.rest-client",
+    "ms-azuretools.vscode-docker"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "react-ts",
+  "layers": [
+    "base",
+    "node",
+    "typescript",
+    "front",
+    "react"
+  ],
+  "extensions": [
+    "hm.hm-vscode-typescript-pack",
+    "hm.hm-vscode-front-pack",
+    "hm.hm-vscode-react-pack"
+  ]
+}

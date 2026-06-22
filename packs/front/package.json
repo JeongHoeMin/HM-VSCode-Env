@@ -1,0 +1,16 @@
+{
+  "name": "hm-vscode-front-pack",
+  "displayName": "HM VS Code Frontend Pack",
+  "description": "Frontend common extensions.",
+  "version": "0.0.1",
+  -> "publisher": "hoeminJ",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [
+    "bradlc.vscode-tailwindcss"
+  ]
+}

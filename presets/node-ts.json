@@ -1,0 +1,11 @@
+{
+  "name": "node-ts",
+  "layers": [
+    "base",
+    "node",
+    "typescript"
+  ],
+  "extensions": [
+    "hm.hm-vscode-typescript-pack"
+  ]
+}

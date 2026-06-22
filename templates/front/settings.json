@@ -1,0 +1,22 @@
+{
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "css.validate": true,
+  "scss.validate": true,
+  "emmet.triggerExpansionOnTab": true,
+  "explorer.fileNesting.patterns": {
+    "vite.config.js": "vitest.config.js, playwright.config.js",
+    "vite.config.ts": "vitest.config.ts, playwright.config.ts",
+    "postcss.config.js": "tailwind.config.js, autoprefixer.config.js",
+    "postcss.config.mjs": "tailwind.config.js, tailwind.config.ts, autoprefixer.config.js",
+    "tailwind.config.js": "postcss.config.js, postcss.config.mjs",
+    "tailwind.config.ts": "postcss.config.js, postcss.config.mjs"
+  }
+}

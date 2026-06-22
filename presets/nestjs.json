@@ -1,0 +1,15 @@
+{
+  "name": "nestjs",
+  "layers": [
+    "base",
+    "node",
+    "typescript",
+    "backend",
+    "nestjs"
+  ],
+  "extensions": [
+    "hm.hm-vscode-typescript-pack",
+    "hm.hm-vscode-backend-pack",
+    "hm.hm-vscode-nestjs-pack"
+  ]
+}

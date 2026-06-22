@@ -1,0 +1,14 @@
+{
+  "name": "hm-vscode-electron-pack",
+  "displayName": "HM VS Code Electron Pack",
+  "description": "Electron project extensions.",
+  "version": "0.0.1",
+  -> "publisher": "hoeminJ",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": []
+}

@@ -1,0 +1,9 @@
+{
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+
+  "explorer.fileNesting.patterns": {
+    "*.vue": "$(capture).spec.ts, $(capture).test.ts, $(capture).stories.ts"
+  }
+}

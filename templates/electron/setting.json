@@ -1,0 +1,17 @@
+{
+  "explorer.fileNesting.patterns": {
+    "electron.vite.config.*": "vite.config.*, vitest.config.*",
+    "main.ts": "preload.ts",
+    "main.js": "preload.js"
+  },
+
+  "search.exclude": {
+    "**/release": true,
+    "**/out": true
+  },
+
+  "files.watcherExclude": {
+    "**/release/**": true,
+    "**/out/**": true
+  }
+}

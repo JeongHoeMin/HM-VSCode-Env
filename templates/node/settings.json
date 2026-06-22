@@ -1,0 +1,24 @@
+{
+  "npm.enableScriptExplorer": true,
+  "npm.scriptExplorerAction": "run",
+  "npm.enableRunFromFolder": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, .npmrc, .nvmrc, .node-version",
+    "eslint.config.js": ".eslintignore",
+    "eslint.config.mjs": ".eslintignore",
+    "prettier.config.js": ".prettierignore",
+    "prettier.config.mjs": ".prettierignore"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.turbo": true,
+    "**/.next": true,
+    "**/.nuxt": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.turbo/**": true,
+    "**/.next/**": true,
+    "**/.nuxt/**": true
+  }
+}

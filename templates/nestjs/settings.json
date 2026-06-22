@@ -1,0 +1,9 @@
+{
+  "explorer.fileNesting.patterns": {
+    "*.controller.ts": "$(capture).controller.spec.ts",
+    "*.service.ts": "$(capture).service.spec.ts",
+    "*.module.ts": "$(capture).module.spec.ts",
+    "*.resolver.ts": "$(capture).resolver.spec.ts",
+    "*.gateway.ts": "$(capture).gateway.spec.ts"
+  }
+}

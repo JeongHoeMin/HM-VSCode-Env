@@ -1,0 +1,17 @@
+{
+  "rest-client.environmentVariables": {},
+
+  "explorer.fileNesting.patterns": {
+    "Dockerfile": ".dockerignore, docker-compose.yml, docker-compose.*.yml",
+    "docker-compose.yml": "docker-compose.*.yml, .env"
+  },
+
+  "search.exclude": {
+    "**/logs": true,
+    "**/*.log": true
+  },
+
+  "files.watcherExclude": {
+    "**/logs/**": true
+  }
+}
