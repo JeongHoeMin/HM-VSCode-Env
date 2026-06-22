@@ -20,7 +20,7 @@
     "README.md"
   ],
   "bin": {
-    "hm-vscode-env": "./scripts/apply-vscode-preset.mjs"
+    "hm-vscode-env": "scripts/apply-vscode-preset.mjs"
   },
   "scripts": {
     "apply": "node scripts/apply-vscode-preset.mjs",
