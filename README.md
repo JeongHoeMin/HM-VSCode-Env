@@ -2,7 +2,7 @@
 
 `hm-vscode-env`는 프로젝트마다 반복해서 맞추는 VS Code 설정을 레이어 조합으로 생성하는 개인용 CLI입니다.
 
-목표는 코드 자체를 바꾸는 것이 아니라, VS Code를 사용할 때 필요한 `.vscode` 설정과 선택형 Profile 파일을 빠르게 준비하는 것입니다. 기본 UI 감각은 WebStorm에 가깝게 맞추고, 테마는 `Island Light`를 기본값으로 사용합니다.
+목표는 코드 자체를 바꾸는 것이 아니라 VS Code 사용 경험을 빠르게 맞추는 것입니다. 기본 UI 감각은 WebStorm에 가깝게 맞추고, 테마는 `Island Light`를 기본값으로 사용합니다.
 
 ## 빠른 시작
 
@@ -10,27 +10,13 @@
 npx @homini/vscode-env
 ```
 
-CLI가 프로젝트 형태를 차례대로 물어봅니다.
+CLI는 방향키, 스페이스바, 엔터로 선택할 수 있습니다.
 
-```text
-Runtime
-  1. Node.js
-  2. Python
+- 방향키: 항목 이동
+- 스페이스바: 체크박스 선택/해제
+- 엔터: 확정
 
-Node project type
-  1. Node only
-  2. Frontend
-  3. Backend
-  4. Electron
-```
-
-예를 들어 `Electron -> Vue -> TypeScript`를 고르면 내부적으로 다음 레이어가 적용됩니다.
-
-```text
-base -> node -> frontend -> typescript -> vue -> electron
-```
-
-직접 이름을 알고 있다면 바로 적용할 수도 있습니다.
+직접 프리셋 이름을 지정할 수도 있습니다.
 
 ```bash
 npx @homini/vscode-env apply vue-ts .
@@ -64,48 +50,53 @@ profiles/
 
 `profiles/*.code-profile`은 VS Code Profile로 가져오기 위한 파일입니다. 확장 프로그램 목록, 키바인딩, 테마, 아이콘, UI 취향처럼 사용자 환경에 가까운 값을 담습니다.
 
-## 확장 프로그램 동작
+## Profile 자동 설정
 
-이 CLI는 사용자의 전체 확장 프로그램을 자동 설치하거나 삭제하지 않습니다.
+기본 대화형 흐름에서는 CLI가 Profile을 자동으로 만들고 연결할지 물어봅니다.
 
-`.vscode/extensions.json`은 이 프로젝트에 필요한 확장을 추천 목록으로 적어둡니다. VS Code에서 프로젝트를 열면 추천 확장을 확인하거나 설치할 수 있습니다.
-
-확장까지 프로젝트별 환경처럼 분리해서 쓰고 싶다면 생성된 `.code-profile`을 VS Code Profile로 import하세요.
-
-## Profile 사용법
-
-CLI 적용 후 다음과 같은 안내가 출력됩니다.
-
-```text
-A VS Code Profile file was also generated for extensions, keybindings, theme, and UI preferences:
-  profiles/hm-electron-vue-ts.code-profile
-
-To use it:
-  1. Open VS Code Command Palette
-  2. Run "Profiles: Import Profile..."
-  3. Select the generated .code-profile file
-  4. After importing, open this project with: code . --profile "hm-electron-vue-ts"
-```
-
-처음 한 번은 VS Code에서 직접 import해야 합니다.
-
-1. Command Palette를 엽니다.
-2. `Profiles: Import Profile...`을 실행합니다.
-3. 생성된 `profiles/hm-*.code-profile` 파일을 선택합니다.
-4. import 후에는 아래처럼 해당 프로필로 프로젝트를 열 수 있습니다.
+승인하면 CLI는 VS Code CLI를 사용해 다음 작업을 시도합니다.
 
 ```bash
-code . --profile "hm-electron-vue-ts"
+code --profile "hm-vue-ts" .
+code --profile "hm-vue-ts" --install-extension dbaeumer.vscode-eslint
 ```
+
+확장 프로그램은 추천 목록을 체크박스로 보여주며, 기본적으로 전체 선택되어 있습니다. 설치하지 않을 확장은 스페이스바로 해제할 수 있습니다.
+
+`code` CLI를 찾지 못하면 실패로 종료하지 않고, 생성된 `.code-profile` 파일을 수동으로 import하는 방법을 안내합니다.
+
+## 명령 옵션
+
+```bash
+npx @homini/vscode-env apply vue-ts . --mode=backup-and-overwrite
+npx @homini/vscode-env apply vue-ts . --setup-profile --install-extensions
+npx @homini/vscode-env apply vue-ts . --skip-profile
+npx @homini/vscode-env apply vue-ts . --profile-name hm-my-vue
+```
+
+옵션:
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--mode backup-and-overwrite` | 기존 `.vscode`를 백업한 뒤 새로 씁니다. |
+| `--mode merge` | 기존 `.vscode`에 프리셋을 병합합니다. |
+| `--mode cancel` | 기존 `.vscode`가 있으면 적용을 취소합니다. |
+| `--profile-name <name>` | 기본 `hm-{preset}` 대신 사용할 VS Code Profile 이름입니다. |
+| `--setup-profile` | 질문 없이 VS Code Profile 생성/연결을 실행합니다. |
+| `--skip-profile` | `.code-profile` 파일만 만들고 VS Code Profile 생성/연결은 건너뜁니다. |
+| `--install-extensions` | Profile에 추천 확장을 모두 설치합니다. |
+| `--no-install-extensions` | Profile은 생성/연결하되 확장 설치는 하지 않습니다. |
+
+비대화형 환경에서는 명시 옵션이 없으면 Profile 생성/연결 및 확장 설치를 건너뜁니다.
 
 ## 기존 프로젝트에 적용
 
 이미 `.vscode` 폴더가 있는 프로젝트에서 실행하면 CLI가 처리 방식을 묻습니다.
 
 ```text
-1. Back up existing .vscode, then overwrite it
-2. Merge preset into existing .vscode
-3. Cancel
+Back up existing .vscode, then overwrite it
+Merge preset into existing .vscode
+Cancel
 ```
 
 추천 기본값은 백업 후 덮어쓰기입니다. 기존 설정은 `.vscode.backup-YYYYMMDD-HHmmss` 형태로 보관됩니다.
@@ -152,37 +143,27 @@ node -> electron
 5. 검증합니다.
 
 ```bash
-npm run validate:json
+pnpm run validate:json
 node scripts/resolve-preset.mjs vue-ts
 ```
 
 ## 배포
 
-GitHub 저장소:
-
-```text
-https://github.com/JeongHoeMin/HM-VSCode-Env
+```bash
+pnpm run validate:json
+npm publish --access public
 ```
 
-npm에 배포하면 사용처에서는 설치 없이 실행할 수 있습니다.
+배포 후 사용처에서는 설치 없이 실행할 수 있습니다.
 
 ```bash
-npm publish
 npx @homini/vscode-env
-```
-
-로컬에서 이 저장소를 직접 사용할 수도 있습니다.
-
-```bash
-git clone https://github.com/JeongHoeMin/HM-VSCode-Env.git
-cd HM-VSCode-Env
-node scripts/apply-vscode-preset.mjs
 ```
 
 ## 검증
 
 ```bash
-npm run validate:json
+pnpm run validate:json
 node scripts/resolve-preset.mjs electron-vue-ts
-node scripts/apply-vscode-preset.mjs apply vue-ts ./sample-project
+node scripts/apply-vscode-preset.mjs apply vue-ts ./sample-project --skip-profile
 ```

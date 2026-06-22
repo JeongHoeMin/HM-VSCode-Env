@@ -1,16 +1,10 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createInterface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import {
-  cp,
-  mkdir,
-  readFile,
-  rm,
-  writeFile
-} from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { checkbox, confirm, input, select } from '@inquirer/prompts';
 import {
   getPresetNameFromLayers,
   listPresetNames,
@@ -20,6 +14,7 @@ import {
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const envRootDir = path.resolve(scriptDir, '..');
+const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
 
 const args = process.argv.slice(2);
 const command = args[0] === 'apply' ? args.shift() : 'apply';
@@ -44,7 +39,15 @@ const selection = options.layers
 
 const targetProjectDir = path.resolve(options.targetProjectDir ?? '.');
 const outputFiles = await buildWorkspaceFiles(selection.layers);
-const profileName = `hm-${selection.presetName}`;
+const defaultProfileName = `hm-${selection.presetName}`;
+const profileName =
+  options.profileName ??
+  (isInteractive
+    ? await input({
+        message: 'VS Code Profile name',
+        default: defaultProfileName
+      })
+    : defaultProfileName);
 
 await writeWorkspaceFiles({
   targetProjectDir,
@@ -58,28 +61,36 @@ const profilePath = await writeProfileFile({
   outputFiles
 });
 
-console.log('');
-console.log(`Applied VS Code environment: ${selection.presetName}`);
-console.log(`Layers: ${selection.layers.join(' -> ')}`);
-console.log(`Output: ${path.join(targetProjectDir, '.vscode')}`);
-console.log('');
-console.log('This only writes project-level VS Code files.');
-console.log('The extensions.json file recommends extensions for this workspace; it does not install or uninstall user extensions.');
-console.log('');
-console.log('A VS Code Profile file was also generated for extensions, keybindings, theme, and UI preferences:');
-console.log(`  ${profilePath}`);
-console.log('');
-console.log('To use it:');
-console.log('  1. Open VS Code Command Palette');
-console.log('  2. Run "Profiles: Import Profile..."');
-console.log('  3. Select the generated .code-profile file');
-console.log(`  4. After importing, open this project with: code . --profile "${profileName}"`);
+const setupPlan = await resolveProfileSetupPlan({
+  options,
+  outputFiles,
+  profileName
+});
+
+const setupResult = await setupVsCodeProfile({
+  targetProjectDir,
+  profileName,
+  extensionIds: setupPlan.extensionIds,
+  shouldSetupProfile: setupPlan.shouldSetupProfile
+});
+
+printSummary({
+  selection,
+  targetProjectDir,
+  profileName,
+  profilePath,
+  setupPlan,
+  setupResult
+});
 
 function parseArgs(rawArgs) {
   const result = {
+    installExtensions: null,
     layers: null,
     mode: null,
     presetName: null,
+    profileName: null,
+    setupProfile: null,
     targetProjectDir: null
   };
 
@@ -113,6 +124,38 @@ function parseArgs(rawArgs) {
       continue;
     }
 
+    if (arg === '--profile-name') {
+      result.profileName = rawArgs[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--profile-name=')) {
+      result.profileName = arg.slice('--profile-name='.length);
+      continue;
+    }
+
+    if (arg === '--setup-profile') {
+      result.setupProfile = true;
+      continue;
+    }
+
+    if (arg === '--skip-profile') {
+      result.setupProfile = false;
+      result.installExtensions = false;
+      continue;
+    }
+
+    if (arg === '--install-extensions') {
+      result.installExtensions = true;
+      continue;
+    }
+
+    if (arg === '--no-install-extensions') {
+      result.installExtensions = false;
+      continue;
+    }
+
     if (result.layers && !result.targetProjectDir) {
       result.targetProjectDir = arg;
       continue;
@@ -135,108 +178,102 @@ function parseArgs(rawArgs) {
 }
 
 async function promptForSelection() {
-  const rl = createInterface({ input, output });
+  console.log('HM VS Code Env');
+  console.log('Use arrow keys to move, space to toggle checkboxes, and enter to confirm.');
+  console.log('');
 
-  try {
-    console.log('HM VS Code Env');
-    console.log('Choose the project shape and this CLI will compose the matching VS Code layers.');
-    console.log('');
+  const runtime = await select({
+    message: 'Runtime',
+    choices: [
+      { name: 'Node.js', value: 'node' },
+      { name: 'Python', value: 'python' }
+    ]
+  });
 
-    const runtime = await choose(rl, 'Runtime', [
-      ['node', 'Node.js'],
-      ['python', 'Python']
-    ]);
-
-    if (runtime === 'python') {
-      const framework = await choose(rl, 'Python framework', [
-        ['python', 'Plain Python'],
-        ['fastapi', 'FastAPI']
-      ]);
-      const layers = resolvePreset(framework);
-      return { presetName: getPresetNameFromLayers(layers), layers };
-    }
-
-    const projectType = await choose(rl, 'Node project type', [
-      ['node', 'Node only'],
-      ['frontend', 'Frontend'],
-      ['backend', 'Backend'],
-      ['electron', 'Electron']
-    ]);
-
-    if (projectType === 'node') {
-      const language = await chooseLanguage(rl);
-      const layers = resolvePreset(language === 'typescript' ? 'node-ts' : 'node-js');
-      return { presetName: getPresetNameFromLayers(layers), layers };
-    }
-
-    if (projectType === 'frontend') {
-      const framework = await choose(rl, 'Frontend framework', [
-        ['vue', 'Vue'],
-        ['react', 'React']
-      ]);
-      const language = await chooseLanguage(rl);
-      const layers = resolvePreset(`${framework}-${language === 'typescript' ? 'ts' : 'js'}`);
-      return { presetName: getPresetNameFromLayers(layers), layers };
-    }
-
-    if (projectType === 'backend') {
-      const framework = await choose(rl, 'Backend framework', [
-        ['nestjs', 'NestJS'],
-        ['express', 'Express']
-      ]);
-
-      if (framework === 'nestjs') {
-        const layers = resolvePreset('nestjs');
-        return { presetName: 'nestjs', layers };
-      }
-
-      const language = await chooseLanguage(rl);
-      const layers = resolvePreset(`express-${language === 'typescript' ? 'ts' : 'js'}`);
-      return { presetName: getPresetNameFromLayers(layers), layers };
-    }
-
-    const uiFramework = await choose(rl, 'Electron renderer', [
-      ['vue', 'Vue'],
-      ['react', 'React'],
-      ['none', 'No renderer framework']
-    ]);
-    const language = await chooseLanguage(rl);
-    const suffix = language === 'typescript' ? 'ts' : 'js';
-    const presetName =
-      uiFramework === 'none' ? `electron-${suffix}` : `electron-${uiFramework}-${suffix}`;
-    const layers = resolvePreset(presetName);
-    return { presetName, layers };
-  } finally {
-    rl.close();
+  if (runtime === 'python') {
+    const framework = await select({
+      message: 'Python framework',
+      choices: [
+        { name: 'Plain Python', value: 'python' },
+        { name: 'FastAPI', value: 'fastapi' }
+      ]
+    });
+    const layers = resolvePreset(framework);
+    return { presetName: getPresetNameFromLayers(layers), layers };
   }
+
+  const projectType = await select({
+    message: 'Node project type',
+    choices: [
+      { name: 'Node only', value: 'node' },
+      { name: 'Frontend', value: 'frontend' },
+      { name: 'Backend', value: 'backend' },
+      { name: 'Electron', value: 'electron' }
+    ]
+  });
+
+  if (projectType === 'node') {
+    const language = await chooseLanguage();
+    const layers = resolvePreset(language === 'typescript' ? 'node-ts' : 'node-js');
+    return { presetName: getPresetNameFromLayers(layers), layers };
+  }
+
+  if (projectType === 'frontend') {
+    const framework = await select({
+      message: 'Frontend framework',
+      choices: [
+        { name: 'Vue', value: 'vue' },
+        { name: 'React', value: 'react' }
+      ]
+    });
+    const language = await chooseLanguage();
+    const layers = resolvePreset(`${framework}-${language === 'typescript' ? 'ts' : 'js'}`);
+    return { presetName: getPresetNameFromLayers(layers), layers };
+  }
+
+  if (projectType === 'backend') {
+    const framework = await select({
+      message: 'Backend framework',
+      choices: [
+        { name: 'NestJS', value: 'nestjs' },
+        { name: 'Express', value: 'express' }
+      ]
+    });
+
+    if (framework === 'nestjs') {
+      const layers = resolvePreset('nestjs');
+      return { presetName: 'nestjs', layers };
+    }
+
+    const language = await chooseLanguage();
+    const layers = resolvePreset(`express-${language === 'typescript' ? 'ts' : 'js'}`);
+    return { presetName: getPresetNameFromLayers(layers), layers };
+  }
+
+  const uiFramework = await select({
+    message: 'Electron renderer',
+    choices: [
+      { name: 'Vue', value: 'vue' },
+      { name: 'React', value: 'react' },
+      { name: 'No renderer framework', value: 'none' }
+    ]
+  });
+  const language = await chooseLanguage();
+  const suffix = language === 'typescript' ? 'ts' : 'js';
+  const presetName =
+    uiFramework === 'none' ? `electron-${suffix}` : `electron-${uiFramework}-${suffix}`;
+  const layers = resolvePreset(presetName);
+  return { presetName, layers };
 }
 
-async function chooseLanguage(rl) {
-  return choose(rl, 'Language', [
-    ['typescript', 'TypeScript'],
-    ['javascript', 'JavaScript']
-  ]);
-}
-
-async function choose(rl, label, choices) {
-  console.log(label);
-
-  for (const [index, [, choiceLabel]] of choices.entries()) {
-    console.log(`  ${index + 1}. ${choiceLabel}`);
-  }
-
-  while (true) {
-    const answer = await rl.question('Select number: ');
-    const selectedIndex = Number(answer.trim()) - 1;
-    const selected = choices[selectedIndex];
-
-    if (selected) {
-      console.log('');
-      return selected[0];
-    }
-
-    console.log('Please enter one of the listed numbers.');
-  }
+async function chooseLanguage() {
+  return select({
+    message: 'Language',
+    choices: [
+      { name: 'TypeScript', value: 'typescript' },
+      { name: 'JavaScript', value: 'javascript' }
+    ]
+  });
 }
 
 async function buildWorkspaceFiles(layers) {
@@ -281,7 +318,7 @@ async function buildWorkspaceFiles(layers) {
 async function writeWorkspaceFiles({ targetProjectDir, outputFiles, mode }) {
   const vscodeDir = path.join(targetProjectDir, '.vscode');
   const writeMode = existsSync(vscodeDir)
-    ? mode ?? (input.isTTY ? await promptForWriteMode(vscodeDir) : 'backup-and-overwrite')
+    ? mode ?? (isInteractive ? await promptForWriteMode(vscodeDir) : 'backup-and-overwrite')
     : 'create';
 
   if (writeMode === 'cancel') {
@@ -313,6 +350,29 @@ async function writeWorkspaceFiles({ targetProjectDir, outputFiles, mode }) {
   if (filesToWrite.launch) {
     await writeJson(path.join(vscodeDir, 'launch.json'), filesToWrite.launch);
   }
+}
+
+async function promptForWriteMode(vscodeDir) {
+  console.log(`Existing VS Code workspace settings found: ${vscodeDir}`);
+
+  return select({
+    message: 'How should this CLI handle the existing .vscode folder?',
+    default: 'backup-and-overwrite',
+    choices: [
+      {
+        name: 'Back up existing .vscode, then overwrite it',
+        value: 'backup-and-overwrite'
+      },
+      {
+        name: 'Merge preset into existing .vscode',
+        value: 'merge'
+      },
+      {
+        name: 'Cancel',
+        value: 'cancel'
+      }
+    ]
+  });
 }
 
 async function writeProfileFile({ targetProjectDir, profileName, outputFiles }) {
@@ -347,35 +407,223 @@ async function writeProfileFile({ targetProjectDir, profileName, outputFiles }) 
   return profilePath;
 }
 
-async function promptForWriteMode(vscodeDir) {
-  const rl = createInterface({ input, output });
+async function resolveProfileSetupPlan({ options, outputFiles, profileName }) {
+  const allExtensionIds = outputFiles.extensions.recommendations;
+  const shouldSetupProfile =
+    options.setupProfile ??
+    (isInteractive
+      ? await confirm({
+          message: `Create or open VS Code Profile "${profileName}" for this project?`,
+          default: true
+        })
+      : false);
 
-  try {
-    console.log(`Existing VS Code workspace settings found: ${vscodeDir}`);
-    console.log('  1. Back up existing .vscode, then overwrite it');
-    console.log('  2. Merge preset into existing .vscode');
-    console.log('  3. Cancel');
-
-    while (true) {
-      const answer = await rl.question('Select number: ');
-
-      if (answer.trim() === '1') {
-        return 'backup-and-overwrite';
-      }
-
-      if (answer.trim() === '2') {
-        return 'merge';
-      }
-
-      if (answer.trim() === '3') {
-        return 'cancel';
-      }
-
-      console.log('Please enter 1, 2, or 3.');
-    }
-  } finally {
-    rl.close();
+  if (!shouldSetupProfile) {
+    return {
+      shouldSetupProfile: false,
+      extensionIds: []
+    };
   }
+
+  if (options.installExtensions === false) {
+    return {
+      shouldSetupProfile: true,
+      extensionIds: []
+    };
+  }
+
+  if (options.installExtensions === true || !isInteractive) {
+    return {
+      shouldSetupProfile: true,
+      extensionIds: allExtensionIds
+    };
+  }
+
+  const extensionIds = await checkbox({
+    message: 'Select extensions to install into this VS Code Profile',
+    instructions: 'Use space to toggle, enter to continue.',
+    required: false,
+    choices: allExtensionIds.map((extensionId) => ({
+      name: extensionId,
+      value: extensionId,
+      checked: true
+    }))
+  });
+
+  return {
+    shouldSetupProfile: true,
+    extensionIds
+  };
+}
+
+async function setupVsCodeProfile({
+  targetProjectDir,
+  profileName,
+  extensionIds,
+  shouldSetupProfile
+}) {
+  if (!shouldSetupProfile) {
+    return {
+      status: 'skipped',
+      installedExtensions: []
+    };
+  }
+
+  const codeCommand = findCodeCommand();
+
+  if (!codeCommand) {
+    return {
+      status: 'missing-code-cli',
+      installedExtensions: []
+    };
+  }
+
+  await runCodeCommand(codeCommand, ['--profile', profileName, targetProjectDir]);
+
+  const installedExtensions = [];
+
+  for (const extensionId of extensionIds) {
+    await runCodeCommand(codeCommand, [
+      '--profile',
+      profileName,
+      '--install-extension',
+      extensionId
+    ]);
+    installedExtensions.push(extensionId);
+  }
+
+  return {
+    status: 'configured',
+    installedExtensions
+  };
+}
+
+function findCodeCommand() {
+  const candidates =
+    process.platform === 'win32'
+      ? [
+          'code',
+          path.join(process.env.LOCALAPPDATA ?? '', 'Programs', 'Microsoft VS Code', 'bin', 'code.cmd')
+        ]
+      : ['code'];
+
+  return candidates.find((candidate) => candidate && commandCanStart(candidate));
+}
+
+function commandCanStart(command) {
+  const result = spawnCodeSync(command, ['--version'], {
+    stdio: 'ignore'
+  });
+
+  return result.status === 0;
+}
+
+async function runCodeCommand(command, args) {
+  await new Promise((resolve, reject) => {
+    const child = spawnCode(command, args, {
+      stdio: 'inherit'
+    });
+
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`VS Code CLI failed: ${command} ${args.join(' ')}`));
+    });
+  });
+}
+
+function spawnCode(command, args, options) {
+  if (process.platform !== 'win32') {
+    return spawn(command, args, {
+      shell: false,
+      ...options
+    });
+  }
+
+  return spawn('cmd.exe', ['/d', '/s', '/c', buildWindowsCommand(command, args)], {
+    shell: false,
+    ...options
+  });
+}
+
+function spawnCodeSync(command, args, options) {
+  if (process.platform !== 'win32') {
+    return spawnSync(command, args, {
+      shell: false,
+      ...options
+    });
+  }
+
+  return spawnSync('cmd.exe', ['/d', '/s', '/c', buildWindowsCommand(command, args)], {
+    shell: false,
+    ...options
+  });
+}
+
+function buildWindowsCommand(command, args) {
+  return [command, ...args].map(quoteWindowsArg).join(' ');
+}
+
+function quoteWindowsArg(value) {
+  const stringValue = String(value);
+
+  if (!/[\s"]/u.test(stringValue)) {
+    return stringValue;
+  }
+
+  return `"${stringValue.replaceAll('"', '\\"')}"`;
+}
+
+function printSummary({
+  selection,
+  targetProjectDir,
+  profileName,
+  profilePath,
+  setupPlan,
+  setupResult
+}) {
+  console.log('');
+  console.log(`Applied VS Code environment: ${selection.presetName}`);
+  console.log(`Layers: ${selection.layers.join(' -> ')}`);
+  console.log(`Workspace files: ${path.join(targetProjectDir, '.vscode')}`);
+  console.log(`Profile export file: ${profilePath}`);
+  console.log('');
+  console.log('.vscode files are project-level settings and extension recommendations.');
+  console.log('.code-profile is a shareable/exportable profile file for VS Code settings, keybindings, and extensions.');
+
+  if (setupResult.status === 'configured') {
+    console.log('');
+    console.log(`VS Code Profile configured: ${profileName}`);
+    console.log(`Installed extensions in profile: ${setupResult.installedExtensions.length}`);
+    console.log(`Open this project with: code . --profile "${profileName}"`);
+    return;
+  }
+
+  if (setupResult.status === 'missing-code-cli') {
+    console.log('');
+    console.log('VS Code CLI was not found, so the Profile could not be created automatically.');
+    console.log('Manual setup:');
+    console.log('  1. Open VS Code Command Palette');
+    console.log('  2. Run "Profiles: Import Profile..."');
+    console.log('  3. Select the generated .code-profile file');
+    console.log(`  4. Open this project with: code . --profile "${profileName}"`);
+    return;
+  }
+
+  if (setupPlan.shouldSetupProfile) {
+    console.log('');
+    console.log(`VS Code Profile setup was requested for: ${profileName}`);
+    console.log('No extensions were selected for installation.');
+    return;
+  }
+
+  console.log('');
+  console.log('VS Code Profile setup was skipped.');
+  console.log(`Import manually later from: ${profilePath}`);
 }
 
 async function mergeExistingWorkspaceFiles(vscodeDir, outputFiles) {
@@ -578,6 +826,14 @@ function printUsage() {
   console.log('  hm-vscode-env');
   console.log('  hm-vscode-env apply <preset-name> [target-project]');
   console.log('  hm-vscode-env apply --layers node,frontend,vue,typescript [target-project]');
+  console.log('');
+  console.log('Options:');
+  console.log('  --mode <backup-and-overwrite|merge|cancel>');
+  console.log('  --profile-name <name>');
+  console.log('  --setup-profile');
+  console.log('  --skip-profile');
+  console.log('  --install-extensions');
+  console.log('  --no-install-extensions');
   console.log('');
   console.log('Known presets:');
   console.log(`  ${listPresetNames().join(', ')}`);

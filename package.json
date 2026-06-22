@@ -1,6 +1,6 @@
 {
   "name": "@homini/vscode-env",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Composable VS Code workspace and profile presets.",
   "private": false,
   "type": "module",
@@ -26,5 +26,8 @@
     "apply": "node scripts/apply-vscode-preset.mjs",
     "resolve": "node scripts/resolve-preset.mjs",
     "validate:json": "node scripts/validate-json.mjs"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2"
   }
 }
