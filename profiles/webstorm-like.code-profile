@@ -1,0 +1,38 @@
+{
+  "name": "hm-webstorm-like",
+  "settings": {
+    "workbench.colorTheme": "Island Light",
+    "workbench.iconTheme": "material-icon-theme",
+    "window.commandCenter": false,
+    "breadcrumbs.enabled": true,
+    "explorer.compactFolders": false,
+    "explorer.fileNesting.enabled": true,
+    "editor.fontFamily": "JetBrains Mono, Consolas, 'Courier New', monospace",
+    "editor.fontLigatures": true,
+    "editor.minimap.enabled": false,
+    "editor.stickyScroll.enabled": true
+  },
+  "extensions": [
+    "PKief.material-icon-theme",
+    "EditorConfig.EditorConfig",
+    "usernamehw.errorlens",
+    "eamodio.gitlens"
+  ],
+  "keybindings": [
+    {
+      "key": "ctrl+alt+l",
+      "command": "editor.action.formatDocument",
+      "when": "editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly"
+    },
+    {
+      "key": "shift+f6",
+      "command": "editor.action.rename",
+      "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly"
+    },
+    {
+      "key": "ctrl+alt+o",
+      "command": "editor.action.organizeImports",
+      "when": "editorTextFocus && !editorReadonly"
+    }
+  ]
+}
