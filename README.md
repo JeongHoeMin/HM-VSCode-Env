@@ -7,7 +7,7 @@
 ## 빠른 시작
 
 ```bash
-npx hm-vscode-env
+npx @hm/vscode-env
 ```
 
 CLI가 프로젝트 형태를 차례대로 물어봅니다.
@@ -33,16 +33,16 @@ base -> node -> frontend -> typescript -> vue -> electron
 직접 이름을 알고 있다면 바로 적용할 수도 있습니다.
 
 ```bash
-npx hm-vscode-env apply vue-ts .
-npx hm-vscode-env apply electron-vue-ts .
-npx hm-vscode-env apply nestjs .
-npx hm-vscode-env apply fastapi .
+npx @hm/vscode-env apply vue-ts .
+npx @hm/vscode-env apply electron-vue-ts .
+npx @hm/vscode-env apply nestjs .
+npx @hm/vscode-env apply fastapi .
 ```
 
 레이어를 직접 지정하는 고급 사용도 가능합니다.
 
 ```bash
-npx hm-vscode-env apply --layers node,frontend,vue,typescript .
+npx @hm/vscode-env apply --layers node,frontend,vue,typescript .
 ```
 
 ## 생성되는 것
@@ -168,7 +168,7 @@ npm에 배포하면 사용처에서는 설치 없이 실행할 수 있습니다.
 
 ```bash
 npm publish
-npx hm-vscode-env
+npx @hm/vscode-env
 ```
 
 로컬에서 이 저장소를 직접 사용할 수도 있습니다.
