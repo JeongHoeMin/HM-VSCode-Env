@@ -1,5 +1,5 @@
 {
-  "name": "@hm/vscode-env",
+  "name": "@homini/vscode-env",
   "version": "0.1.0",
   "description": "Composable VS Code workspace and profile presets.",
   "private": false,
