@@ -1,8 +1,24 @@
 {
   "name": "hm-vscode-env",
   "version": "0.1.0",
-  "private": true,
+  "description": "Composable VS Code workspace and profile presets.",
+  "private": false,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JeongHoeMin/HM-VSCode-Env.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "scripts",
+    "src",
+    "templates",
+    "profiles",
+    "package.json",
+    "README.md"
+  ],
   "bin": {
     "hm-vscode-env": "./scripts/apply-vscode-preset.mjs"
   },
