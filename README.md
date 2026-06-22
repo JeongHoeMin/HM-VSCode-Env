@@ -53,20 +53,21 @@ profiles/
 
 ## Profile 자동 설정
 
-기본 대화형 흐름에서는 CLI가 Profile을 자동으로 만들고 연결할지 물어봅니다.
+기본 대화형 흐름에서는 CLI가 VS Code Profile을 열고 연결할지 물어봅니다.
 
 승인하면 CLI는 VS Code CLI를 사용해 다음 작업을 시도합니다.
 
 ```bash
-code --new-window --profile "hm-vue-ts" .
+code --new-window --profile "hm-vue-ts"
 code --profile "hm-vue-ts" --install-extension dbaeumer.vscode-eslint
+code --new-window --profile "hm-vue-ts" .
 ```
 
 확장 프로그램은 추천 목록을 체크박스로 보여주며, 기본적으로 전체 선택되어 있습니다. 설치하지 않을 확장은 스페이스바로 해제할 수 있습니다.
 
 `code` CLI를 찾지 못하면 실패로 종료하지 않고, 생성된 `.code-profile` 파일을 수동으로 import하는 방법을 안내합니다.
 
-VS Code가 새 Profile을 처음 생성하는 동안에는 확장 설치가 바로 준비되지 않을 수 있습니다. CLI는 새 창을 강제로 열어 Profile 생성을 유도하고 잠깐 기다린 뒤, 선택된 확장 설치를 시도합니다. VS Code CLI가 개별 확장 설치를 거부하면 실패한 확장 수와 재시도 명령을 안내합니다.
+VS Code CLI는 이미 열린 workspace를 다른 Profile로 다시 여는 경우 Profile 등록을 지연할 수 있습니다. 그래서 CLI는 먼저 빈 새 창으로 Profile을 만들고, 확장을 설치한 뒤, 마지막에 대상 프로젝트를 해당 Profile로 엽니다. 그래도 Profile이 등록되지 않으면 생성된 `.code-profile` 파일을 `Profiles: Import Profile...`로 가져오라는 안내를 출력합니다.
 
 ## 명령 옵션
 

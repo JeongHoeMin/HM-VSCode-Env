@@ -487,9 +487,17 @@ async function setupVsCodeProfile({
     };
   }
 
-  await runCodeCommand(codeCommand, ['--new-window', '--profile', profileName, targetProjectDir]);
+  await runCodeCommand(codeCommand, ['--new-window', '--profile', profileName]);
 
-  await waitForProfileAvailable(codeCommand, profileName);
+  const profileReady = await waitForProfileAvailable(codeCommand, profileName);
+
+  if (!profileReady) {
+    return {
+      status: 'profile-not-found',
+      installedExtensions: [],
+      failedExtensions: extensionIds
+    };
+  }
 
   const installedExtensions = [];
   const failedExtensions = [];
@@ -509,6 +517,8 @@ async function setupVsCodeProfile({
     }
   }
 
+  await runCodeCommand(codeCommand, ['--new-window', '--profile', profileName, targetProjectDir]);
+
   return {
     status: 'configured',
     installedExtensions,
@@ -526,11 +536,12 @@ async function waitForProfileAvailable(codeCommand, profileName) {
     });
 
     if (result.status === 0) {
-      return;
+      return true;
     }
 
     await delay(delayMs);
   }
+  return false;
 }
 
 async function delay(ms) {
@@ -658,6 +669,19 @@ function printSummary({
     console.log('  2. Run "Profiles: Import Profile..."');
     console.log('  3. Select the generated .code-profile file');
     console.log(`  4. Open this project with: code . --profile "${profileName}"`);
+    return;
+  }
+
+  if (setupResult.status === 'profile-not-found') {
+    console.log('');
+    console.log(`VS Code did not register the Profile automatically: ${profileName}`);
+    console.log('The .code-profile file was created, but VS Code CLI cannot install extensions until that Profile exists.');
+    console.log('Manual setup:');
+    console.log('  1. Open VS Code Command Palette');
+    console.log('  2. Run "Profiles: Import Profile..."');
+    console.log('  3. Select the generated .code-profile file');
+    console.log(`  4. Open this project with: code . --profile "${profileName}"`);
+    console.log('  5. Re-run this command with --setup-profile --install-extensions');
     return;
   }
 
