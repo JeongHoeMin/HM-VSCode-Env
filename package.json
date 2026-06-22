@@ -1,6 +1,6 @@
 {
   "name": "@homini/vscode-env",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Composable VS Code workspace and profile presets.",
   "private": false,
   "type": "module",

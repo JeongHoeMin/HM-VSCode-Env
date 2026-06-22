@@ -184,6 +184,7 @@ async function promptForSelection() {
 
   const runtime = await select({
     message: 'Runtime',
+    loop: false,
     choices: [
       { name: 'Node.js', value: 'node' },
       { name: 'Python', value: 'python' }
@@ -193,6 +194,7 @@ async function promptForSelection() {
   if (runtime === 'python') {
     const framework = await select({
       message: 'Python framework',
+      loop: false,
       choices: [
         { name: 'Plain Python', value: 'python' },
         { name: 'FastAPI', value: 'fastapi' }
@@ -204,6 +206,7 @@ async function promptForSelection() {
 
   const projectType = await select({
     message: 'Node project type',
+    loop: false,
     choices: [
       { name: 'Node only', value: 'node' },
       { name: 'Frontend', value: 'frontend' },
@@ -221,6 +224,7 @@ async function promptForSelection() {
   if (projectType === 'frontend') {
     const framework = await select({
       message: 'Frontend framework',
+      loop: false,
       choices: [
         { name: 'Vue', value: 'vue' },
         { name: 'React', value: 'react' }
@@ -234,6 +238,7 @@ async function promptForSelection() {
   if (projectType === 'backend') {
     const framework = await select({
       message: 'Backend framework',
+      loop: false,
       choices: [
         { name: 'NestJS', value: 'nestjs' },
         { name: 'Express', value: 'express' }
@@ -252,6 +257,7 @@ async function promptForSelection() {
 
   const uiFramework = await select({
     message: 'Electron renderer',
+    loop: false,
     choices: [
       { name: 'Vue', value: 'vue' },
       { name: 'React', value: 'react' },
@@ -269,6 +275,7 @@ async function promptForSelection() {
 async function chooseLanguage() {
   return select({
     message: 'Language',
+    loop: false,
     choices: [
       { name: 'TypeScript', value: 'typescript' },
       { name: 'JavaScript', value: 'javascript' }
@@ -358,6 +365,7 @@ async function promptForWriteMode(vscodeDir) {
   return select({
     message: 'How should this CLI handle the existing .vscode folder?',
     default: 'backup-and-overwrite',
+    loop: false,
     choices: [
       {
         name: 'Back up existing .vscode, then overwrite it',
@@ -442,6 +450,7 @@ async function resolveProfileSetupPlan({ options, outputFiles, profileName }) {
   const extensionIds = await checkbox({
     message: 'Select extensions to install into this VS Code Profile',
     instructions: 'Use space to toggle, enter to continue.',
+    loop: false,
     required: false,
     choices: allExtensionIds.map((extensionId) => ({
       name: extensionId,
@@ -480,22 +489,64 @@ async function setupVsCodeProfile({
 
   await runCodeCommand(codeCommand, ['--profile', profileName, targetProjectDir]);
 
+  const profileReady = await waitForProfileAvailable(codeCommand, profileName);
+
+  if (!profileReady) {
+    return {
+      status: 'profile-not-ready',
+      installedExtensions: [],
+      failedExtensions: extensionIds
+    };
+  }
+
   const installedExtensions = [];
+  const failedExtensions = [];
 
   for (const extensionId of extensionIds) {
-    await runCodeCommand(codeCommand, [
-      '--profile',
-      profileName,
-      '--install-extension',
-      extensionId
-    ]);
-    installedExtensions.push(extensionId);
+    try {
+      await runCodeCommand(codeCommand, [
+        '--profile',
+        profileName,
+        '--install-extension',
+        extensionId
+      ]);
+      installedExtensions.push(extensionId);
+    } catch (error) {
+      failedExtensions.push(extensionId);
+      console.warn(`Could not install ${extensionId}: ${error.message}`);
+    }
   }
 
   return {
     status: 'configured',
-    installedExtensions
+    installedExtensions,
+    failedExtensions
   };
+}
+
+async function waitForProfileAvailable(codeCommand, profileName) {
+  const maxAttempts = 20;
+  const delayMs = 750;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const result = spawnCodeSync(codeCommand, ['--profile', profileName, '--list-extensions'], {
+      stdio: 'ignore'
+    });
+
+    if (result.status === 0) {
+      return true;
+    }
+
+    await delay(delayMs);
+  }
+
+  return false;
+}
+
+async function delay(ms) {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function findCodeCommand() {
@@ -599,7 +650,21 @@ function printSummary({
     console.log('');
     console.log(`VS Code Profile configured: ${profileName}`);
     console.log(`Installed extensions in profile: ${setupResult.installedExtensions.length}`);
+
+    if (setupResult.failedExtensions?.length > 0) {
+      console.log(`Extensions that need manual retry: ${setupResult.failedExtensions.length}`);
+      console.log(`Retry with: code --profile "${profileName}" --install-extension <extension-id>`);
+    }
+
     console.log(`Open this project with: code . --profile "${profileName}"`);
+    return;
+  }
+
+  if (setupResult.status === 'profile-not-ready') {
+    console.log('');
+    console.log(`VS Code Profile was opened but was not ready for extension installation yet: ${profileName}`);
+    console.log('Open the project once, then retry extension installation with:');
+    console.log(`  hm-vscode-env apply ${selection.presetName} "${targetProjectDir}" --setup-profile --install-extensions`);
     return;
   }
 
