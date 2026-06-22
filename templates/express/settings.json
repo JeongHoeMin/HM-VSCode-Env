@@ -1,0 +1,6 @@
+{
+  "explorer.fileNesting.patterns": {
+    "app.js": "routes.js, middleware.js",
+    "server.js": "app.js, routes.js"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "express-js",
+  "layers": [
+    "base",
+    "node",
+    "javascript",
+    "backend",
+    "express"
+  ],
+  "extensions": [
+    "hm.hm-vscode-javascript-pack",
+    "hm.hm-vscode-backend-pack"
+  ]
+}

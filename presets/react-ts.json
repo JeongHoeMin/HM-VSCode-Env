@@ -4,12 +4,12 @@
     "base",
     "node",
     "typescript",
-    "front",
+    "frontend",
     "react"
   ],
   "extensions": [
     "hm.hm-vscode-typescript-pack",
-    "hm.hm-vscode-front-pack",
+    "hm.hm-vscode-frontend-pack",
     "hm.hm-vscode-react-pack"
   ]
 }
